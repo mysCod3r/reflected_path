@@ -8,6 +8,7 @@ from src.config import *
 # Import the Tile class and level data
 from src.tile import Tile
 from src.level_data import LEVELS
+import os
 
 class Game:
     """
@@ -16,6 +17,19 @@ class Game:
     def __init__(self):
         """Initialize Pygame, screen, clock, font, and game variables."""
         pygame.init() # Initialize all Pygame modules
+
+         # --- Mixer Initialization (Sound) ---
+        try:
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+            print("Pygame mixer initialized successfully.")
+            self.sound_enabled = True
+            self._load_sounds() # Helper method to load sounds
+        except pygame.error as e:
+            print(f"Warning: Pygame mixer could not be initialized: {e}")
+            print("Sounds will be disabled.")
+            self.sound_enabled = False
+            self.sounds = {} # Still create dict but it will be empty
+        # ----------------------------------
 
         # --- Display Setup ---
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -50,6 +64,39 @@ class Game:
         if not self._setup_level():
              print("ERROR: Failed to setup initial level. Exiting.")
              self.running = False # Stop the game loop if setup fails
+    
+    def _load_sounds(self):
+            """Loads sound effects into a dictionary."""
+            self.sounds = {}
+            sound_files = {
+                SOUND_CLICK: 'assets/sounds/click.wav',
+                SOUND_CORRECT: 'assets/sounds/correct.wav',
+                SOUND_INCORRECT: 'assets/sounds/incorrect.wav',
+                SOUND_LEVEL_COMPLETE: 'assets/sounds/level_complete.wav',
+                SOUND_GAME_OVER: 'assets/sounds/game_over.wav',
+                SOUND_PATH_SHOW: 'assets/sounds/path_show.wav',
+            }
+            for name, path in sound_files.items():
+                try:
+                    # Check if file exists before loading
+                    if os.path.exists(path):
+                        self.sounds[name] = pygame.mixer.Sound(path)
+                        # self.sounds[name].set_volume(0.7)
+                        print(f"  Loaded sound: {path}")
+                    else:
+                        print(f"  Warning: Sound file not found: {path}")
+                        self.sounds[name] = None # Indicate missing sound
+                except pygame.error as e:
+                    print(f"  Error loading sound {path}: {e}")
+                    self.sounds[name] = None # Indicate loading error
+
+    def _play_sound(self, name):
+            """Plays a loaded sound effect if sound is enabled and file exists."""
+            if self.sound_enabled and name in self.sounds and self.sounds[name] is not None:
+                try:
+                    self.sounds[name].play()
+                except pygame.error as e:
+                    print(f"Error playing sound '{name}': {e}")
 
     def _create_grid(self):
         """Creates and returns the grid as a 2D list of Tile objects."""
@@ -127,6 +174,7 @@ class Game:
         # --- Set Initial Game State for Level ---
         self.game_state = STATE_SHOWING_PATH
         self.path_show_start_time = pygame.time.get_ticks() # Start path visibility timer
+        self._play_sound(SOUND_PATH_SHOW) # Play sound for path showing
 
         return True # Level setup successful
 
@@ -189,13 +237,16 @@ class Game:
                         # --- Only allow drawing on empty tiles ---
                         if tile.state == TILE_STATE_EMPTY:
                             self.remaining_ink -= 1 # Use ink
+                            self._play_sound(SOUND_CLICK) # Play click sound
                             self.player_drawn_tiles.add(clicked_coords) # Track player attempt
 
                             # --- Immediately check if correct and set state ---
                             if clicked_coords in self.correct_reflection_coords:
                                 tile.set_state(TILE_STATE_CORRECT)
+                                self._play_sound(SOUND_CORRECT) # Play correct sound
                             else:
                                 tile.set_state(TILE_STATE_INCORRECT)
+                                self._play_sound(SOUND_INCORRECT) # Play incorrect sound
                     # Found the clicked tile, no need to check others
                     return
 
@@ -231,17 +282,20 @@ class Game:
                 self.game_state = STATE_LEVEL_TRANSITION
                 self.transition_timer_start = current_time
                 print(f"Level {self.current_level_index + 1} Complete!")
+                self._play_sound(SOUND_LEVEL_COMPLETE) # Play level complete sound
 
             # Check for lose conditions
             elif self.remaining_time_ms <= 0:
                 self.game_state = STATE_GAME_OVER_TIME
                 self.transition_timer_start = current_time # Start timer for message display
                 print("Game Over: Time Up!")
+                self._play_sound(SOUND_GAME_OVER) # Play game over sound
             elif self.remaining_ink <= 0 and not self._check_level_complete():
                  # Only trigger if ink is 0 AND level isn't complete
                  self.game_state = STATE_GAME_OVER_INK
                  self.transition_timer_start = current_time # Start timer for message display
                  print("Game Over: Ink Depleted!")
+                 self._play_sound(SOUND_GAME_OVER) # Play game over sound
 
 
         # --- State: LEVEL_TRANSITION ---

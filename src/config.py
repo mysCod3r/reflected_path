@@ -93,6 +93,14 @@ UI_MARGIN_TOP = 20               # Top margin for UI elements
 UI_MARGIN_LEFT = GRID_ORIGIN_X   # Align UI with grid start
 UI_INFO_SPACING = 220            # Increased horizontal space between Time and Ink display
 
+# --- Sound Effect Keys ---
+SOUND_CLICK = 'click'
+SOUND_CORRECT = 'correct'
+SOUND_INCORRECT = 'incorrect'
+SOUND_LEVEL_COMPLETE = 'level_complete'
+SOUND_GAME_OVER = 'game_over'
+SOUND_PATH_SHOW = 'path_show'
+
 # --- Font Loading ---
 # Attempt to load the default font, provide fallbacks
 UI_FONT = None
