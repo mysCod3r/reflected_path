@@ -138,10 +138,24 @@ class Tile:
             print(f"Warning: Cannot draw Tile ({self.row},{self.col}), rect is None.")
             return
 
+        base_color = self.current_color
+        border_offset = 2 # How many pixels for the border effect
+        inner_rect = self.rect.inflate(-border_offset * 2, -border_offset * 2)
+        
         # Draw the tile background using the current animated color
-        pygame.draw.rect(screen, self.current_color, self.rect)
+        pygame.draw.rect(screen, base_color, self.rect)
 
-        # Draw the grid line overlay if requested
+        try:
+            # Make inner color slightly lighter (ensure RGB values stay within 0-255)
+            lighter_color = pygame.Color(
+                min(255, base_color.r + 15),
+                min(255, base_color.g + 15),
+                min(255, base_color.b + 15)
+            )
+            pygame.draw.rect(screen, lighter_color, inner_rect)
+        except ValueError: # Handle potential errors if base_color has alpha etc.
+             pygame.draw.rect(screen, base_color, inner_rect) # Fallback to base color
+
         if draw_grid_overlay:
             pygame.draw.rect(screen, COLOR_GRID_LINES, self.rect, 1)
 

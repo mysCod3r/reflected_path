@@ -18,77 +18,115 @@ class Game:
         """Initialize Pygame, screen, clock, font, and game variables."""
         pygame.init() # Initialize all Pygame modules
 
-         # --- Mixer Initialization (Sound) ---
+        # --- Mixer Initialization (Sound) ---
         try:
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
             print("Pygame mixer initialized successfully.")
             self.sound_enabled = True
-            self._load_sounds() # Helper method to load sounds
+            # Sounds will be loaded *after* display setup if needed, or here is fine
+            # self._load_sounds()
         except pygame.error as e:
             print(f"Warning: Pygame mixer could not be initialized: {e}")
             print("Sounds will be disabled.")
             self.sound_enabled = False
             self.sounds = {} # Still create dict but it will be empty
-        # ----------------------------------
 
-        # --- Display Setup ---
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption(WINDOW_TITLE)
-        self.clock = pygame.time.Clock()
+        # --- Display Setup (MUST be done BEFORE loading images) ---
+        try:
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+            pygame.display.set_caption(WINDOW_TITLE)
+            print("Display mode set successfully.")
+        except pygame.error as e:
+            print(f"CRITICAL ERROR: Could not set display mode: {e}")
+            # Exit if we cannot create a screen
+            pygame.quit()
+            sys.exit("Failed to initialize display.")
+        # ------------------------------------------------------------
 
-        # --- Font ---
-        # Font is loaded in config.py, check if it was successful
+        # --- Font (Can be loaded after display is set) ---
         self.font = UI_FONT
         if not FONT_AVAILABLE:
             print("CRITICAL: Font not available, UI text cannot be rendered.")
-            # Consider exiting or handling this more gracefully if text is vital
 
-        # --- Game State ---
+        # --- Clock ---
+        self.clock = pygame.time.Clock()
+
+        # --- Load Sounds (Now that display is set, safer place) ---
+        if self.sound_enabled:
+            self._load_sounds() # Load sounds here
+        else:
+            self.sounds = {} # Ensure it exists even if disabled
+
+
+        # --- Load Background Image (Load AFTER display is set) ---
+        self.background_image = None
+        background_path = "assets/images/background.png" # Adjust filename
+        try:
+            if os.path.exists(background_path):
+                # Load the image
+                loaded_image = pygame.image.load(background_path)
+                # Use convert_alpha() if PNG has transparency, otherwise convert()
+                if background_path.lower().endswith(".png"):
+                     self.background_image = loaded_image.convert_alpha()
+                else:
+                     self.background_image = loaded_image.convert()
+
+                # Scale if necessary
+                if self.background_image.get_size() != (SCREEN_WIDTH, SCREEN_HEIGHT):
+                    print(f"Warning: Background size mismatch. Scaling {background_path}...")
+                    self.background_image = pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                print(f"Loaded background image: {background_path}")
+            else:
+                print(f"Warning: Background image not found at {background_path}. Using solid color.")
+        except pygame.error as e:
+            print(f"Error loading background image {background_path}: {e}")
+        # ------------------------------------------------------------
+
+        # --- Game State & Level Data ---
         self.running = True
-        self.game_state = STATE_SHOWING_PATH # Start by showing the path
+        self.game_state = STATE_SHOWING_PATH # Initial state
         self.current_level_index = 0
-
-        # --- Level Specific Data ---
-        self.grid = self._create_grid() # Initialize the grid with Tile objects
-        self.correct_reflection_coords = set() # Stores correct reflection for the current level
-        self.player_drawn_tiles = set()      # Stores (r,c) tuples the player has clicked on player side
-
-        # --- Timers and Limits ---
+        self.grid = self._create_grid()
+        self.correct_reflection_coords = set()
+        self.player_drawn_tiles = set()
         self.remaining_ink = DEFAULT_LEVEL_INK_LIMIT
         self.remaining_time_ms = DEFAULT_LEVEL_TIME_LIMIT
-        self.path_show_start_time = 0  # Timestamp when path showing began
-        self.level_timer_start = 0   # Timestamp when player drawing began
-        self.transition_timer_start = 0 # Timestamp for transitions/messages
+        self.path_show_start_time = 0
+        self.level_timer_start = 0
+        self.transition_timer_start = 0
 
         # --- Initial Level Setup ---
         if not self._setup_level():
-             print("ERROR: Failed to setup initial level. Exiting.")
-             self.running = False # Stop the game loop if setup fails
+            print("ERROR: Failed to setup initial level. Exiting.")
+            self.running = False
     
     def _load_sounds(self):
-            """Loads sound effects into a dictionary."""
-            self.sounds = {}
-            sound_files = {
-                SOUND_CLICK: 'assets/sounds/click.wav',
-                SOUND_CORRECT: 'assets/sounds/correct.wav',
-                SOUND_INCORRECT: 'assets/sounds/incorrect.wav',
-                SOUND_LEVEL_COMPLETE: 'assets/sounds/level_complete.wav',
-                SOUND_GAME_OVER: 'assets/sounds/game_over.wav',
-                SOUND_PATH_SHOW: 'assets/sounds/path_show.wav',
-            }
-            for name, path in sound_files.items():
-                try:
-                    # Check if file exists before loading
-                    if os.path.exists(path):
-                        self.sounds[name] = pygame.mixer.Sound(path)
-                        # self.sounds[name].set_volume(0.7)
-                        print(f"  Loaded sound: {path}")
-                    else:
-                        print(f"  Warning: Sound file not found: {path}")
-                        self.sounds[name] = None # Indicate missing sound
-                except pygame.error as e:
-                    print(f"  Error loading sound {path}: {e}")
-                    self.sounds[name] = None # Indicate loading error
+        """Loads sound effects into a dictionary."""
+        # ... (the _load_sounds code from the previous step) ...
+        self.sounds = {}
+        sound_files = {
+            SOUND_CLICK: 'assets/sounds/click.wav',
+            SOUND_CORRECT: 'assets/sounds/correct.wav',
+            SOUND_INCORRECT: 'assets/sounds/incorrect.wav',
+            SOUND_LEVEL_COMPLETE: 'assets/sounds/level_complete.wav',
+            SOUND_GAME_OVER: 'assets/sounds/game_over.wav',
+            SOUND_PATH_SHOW: 'assets/sounds/path_show.wav',
+        }
+        print("Loading sounds...")
+        loaded_count = 0
+        for name_key, path in sound_files.items():
+            try:
+                if os.path.exists(path):
+                    self.sounds[name_key] = pygame.mixer.Sound(path)
+                    loaded_count += 1
+                else:
+                    print(f"  Warning: Sound file not found for '{name_key}': {path}")
+                    self.sounds[name_key] = None
+            except pygame.error as e:
+                print(f"  Error loading sound for '{name_key}' ({path}): {e}")
+                self.sounds[name_key] = None
+        print(f"Finished loading sounds. {loaded_count}/{len(sound_files)} loaded.")
+
 
     def _play_sound(self, name):
             """Plays a loaded sound effect if sound is enabled and file exists."""
@@ -405,20 +443,17 @@ class Game:
 
     def _draw(self):
         """Draws all game elements onto the screen."""
-        # 1. Fill background
-        self.screen.fill(COLOR_BACKGROUND)
+        # 1. Fill background (Image or Color)
+        if self.background_image:
+            self.screen.blit(self.background_image, (0, 0)) # Draw image first
+        else:
+            self.screen.fill(COLOR_BACKGROUND) # Fallback if no image
 
-        # 2. Draw grid and tiles
+        # --- Draw elements ON TOP of the background ---
         self._draw_grid_and_tiles()
-
-        # 3. Draw symmetry line
         self._draw_symmetry_line()
-
-        # 4. Draw UI (Timer, Ink)
         self._draw_ui()
-
-        # 5. Draw Messages (Game Over, Level Complete etc.)
         self._draw_messages(pygame.time.get_ticks())
+        # ---------------------------------------------
 
-        # 6. Update the full display surface to the screen
         pygame.display.flip()
