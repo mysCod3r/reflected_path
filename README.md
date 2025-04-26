@@ -1,7 +1,7 @@
 # Reflected Path
 
-![Gameplay Screenshot](assets/images/screenshot.png) <!-- Eğer bir ekran görüntüsü eklerseniz bu satırı kullanın -->
-<!-- Ekran görüntüsü eklemek için: Oyunun bir anını yakalayın, assets/images/screenshot.png olarak kaydedin -->
+<img src="assets/images/screenshot_1.png" alt="Gameplay Screenshot 1" width="45%"> <img src="assets/images/screenshot_2.png" alt="Gameplay Screenshot 2" width="45%">
+
 
 A logic and memory puzzle game developed using Python and Pygame. The player must memorize a path shown on one side of a symmetry line and accurately replicate its reflection on the other side before time runs out, within ink limits, and without making too many mistakes.
 
@@ -94,6 +94,7 @@ reflected_path/
 ├── README.md # This file
 └── requirements.txt # Python dependencies
 ```
+
 ## Technologies Used
 *   **Python:** Programming language used for development.
 *   **Pygame:** Library for game development, providing graphics, sound, and input handling.
