@@ -83,9 +83,11 @@ STATE_GAME_COMPLETE = "GAME_COMPLETE" # When all levels are done
 
 # --- Gameplay Tuning ---
 PATH_SHOW_DURATION = 1800       # ms (Slightly less than 2s)
-DEFAULT_LEVEL_TIME_LIMIT = 25000 # ms (25 seconds)
+DEFAULT_LEVEL_TIME_LIMIT = 13000 # ms (25 seconds)
 DEFAULT_LEVEL_INK_LIMIT = 25     # Max number of tiles player can draw
 LEVEL_TRANSITION_DELAY = 1500   # ms pause between levels or after messages
+TIMER_WARNING_THRESHOLD_MS = 10000 # 10 seconds before time runs out
+TIMER_WARNING_REPEAT_DELAY_MS = 1000 # ms between warnings
 
 # --- UI Settings ---
 UI_FONT_SIZE = 26
@@ -100,6 +102,7 @@ SOUND_INCORRECT = 'incorrect'
 SOUND_LEVEL_COMPLETE = 'level_complete'
 SOUND_GAME_OVER = 'game_over'
 SOUND_PATH_SHOW = 'path_show'
+SOUND_TIMER_LOW = 'timer_warning'
 
 # --- Animation Settings ---
 TILE_COLOR_TRANSITION_DURATION = 250 # ms

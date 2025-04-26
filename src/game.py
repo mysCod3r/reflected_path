@@ -97,6 +97,7 @@ class Game:
         self.current_path_coords_to_reveal = []
         self.last_reveal_time = 0
         self.reveal_index = 0
+        self.last_timer_warning_play_time = 0
 
         # --- Initial Level Setup ---
         if not self._setup_level():
@@ -114,6 +115,7 @@ class Game:
             SOUND_LEVEL_COMPLETE: 'assets/sounds/level_complete.wav',
             SOUND_GAME_OVER: 'assets/sounds/game_over.wav',
             SOUND_PATH_SHOW: 'assets/sounds/path_show.wav',
+            SOUND_TIMER_LOW: 'assets/sounds/timer_warning.wav',
         }
         print("Loading sounds...")
         loaded_count = 0
@@ -182,6 +184,7 @@ class Game:
         self.player_drawn_tiles.clear()
         self.remaining_ink = DEFAULT_LEVEL_INK_LIMIT # Reset ink
         self.remaining_time_ms = DEFAULT_LEVEL_TIME_LIMIT # Reset timer
+        self.played_timer_warning = False # Reset timer warning flag
 
         # Clear Grid Tile States - Force immediate color change
         for r in range(GRID_HEIGHT_TILES):
@@ -338,6 +341,13 @@ class Game:
             # Update remaining time
             elapsed_time = current_time - self.level_timer_start
             self.remaining_time_ms = max(0, DEFAULT_LEVEL_TIME_LIMIT - elapsed_time)
+
+            # --- Play Timer Warning Sound (Repeating) ---
+            if self.remaining_time_ms <= TIMER_WARNING_THRESHOLD_MS and self.remaining_time_ms > 0: # Only play if time > 0
+                # Check if enough time has passed since the last play
+                if current_time - self.last_timer_warning_play_time >= TIMER_WARNING_REPEAT_DELAY_MS:
+                    self._play_sound(SOUND_TIMER_LOW)
+                    self.last_timer_warning_play_time = current_time # Update last play time
 
             # Check for win condition first
             if self._check_level_complete():
