@@ -74,20 +74,22 @@ TILE_COLORS = {
 
 # --- Game States ---
 # Using descriptive strings for better debugging and readability
-STATE_SHOWING_PATH = "SHOWING_PATH"
-STATE_PLAYER_DRAWING = "PLAYER_DRAWING"
-STATE_LEVEL_TRANSITION = "LEVEL_TRANSITION" # For pause between levels
-STATE_GAME_OVER_TIME = "GAME_OVER_TIME"
-STATE_GAME_OVER_INK = "GAME_OVER_INK"
+STATE_SHOWING_PATH = "SHOWING_PATH" # When the path is shown to the player
+STATE_PLAYER_DRAWING = "PLAYER_DRAWING" # When the player is drawing
+STATE_LEVEL_TRANSITION = "LEVEL_TRANSITION" # Between levels
+STATE_GAME_OVER_TIME = "GAME_OVER_TIME" # When time runs out
+STATE_GAME_OVER_INK = "GAME_OVER_INK" # When ink runs out
 STATE_GAME_COMPLETE = "GAME_COMPLETE" # When all levels are done
+STATE_GAME_OVER_MISTAKES = "GAME_OVER_MISTAKES" # When too many mistakes are made
 
 # --- Gameplay Tuning ---
 PATH_SHOW_DURATION = 1800       # ms (Slightly less than 2s)
-DEFAULT_LEVEL_TIME_LIMIT = 13000 # ms (25 seconds)
+DEFAULT_LEVEL_TIME_LIMIT = 25000 # ms (25 seconds)
 DEFAULT_LEVEL_INK_LIMIT = 25     # Max number of tiles player can draw
 LEVEL_TRANSITION_DELAY = 1500   # ms pause between levels or after messages
 TIMER_WARNING_THRESHOLD_MS = 10000 # 10 seconds before time runs out
 TIMER_WARNING_REPEAT_DELAY_MS = 1000 # ms between warnings
+DEFAULT_MISTAKE_LIMIT = 5 
 
 # --- UI Settings ---
 UI_FONT_SIZE = 26
