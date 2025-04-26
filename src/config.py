@@ -101,6 +101,9 @@ SOUND_LEVEL_COMPLETE = 'level_complete'
 SOUND_GAME_OVER = 'game_over'
 SOUND_PATH_SHOW = 'path_show'
 
+# --- Animation Settings ---
+TILE_COLOR_TRANSITION_DURATION = 250 # ms (0.25 saniye)
+
 # --- Font Loading ---
 # Attempt to load the default font, provide fallbacks
 UI_FONT = None

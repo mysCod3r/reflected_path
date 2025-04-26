@@ -142,10 +142,12 @@ class Game:
         self.remaining_ink = DEFAULT_LEVEL_INK_LIMIT # Reset ink
         self.remaining_time_ms = DEFAULT_LEVEL_TIME_LIMIT # Reset timer
 
-        # --- Clear Grid Tile States ---
+        # Clear Grid Tile States - Force immediate color change
         for r in range(GRID_HEIGHT_TILES):
             for c in range(GRID_WIDTH_TILES):
-                self.grid[r][c].set_state(TILE_STATE_EMPTY)
+                # Use force_immediate=True to skip animation during setup
+                self.grid[r][c].set_state(TILE_STATE_EMPTY, force_immediate=True)
+
 
         # --- Load Path and Calculate Reflection ---
         current_path_coords = LEVELS[self.current_level_index]
@@ -154,7 +156,7 @@ class Game:
         for r, c in current_path_coords:
             # Validate original path coordinates
             if 0 <= r < GRID_HEIGHT_TILES and 0 <= c < SYMMETRY_LINE_TILE_INDEX:
-                self.grid[r][c].set_state(TILE_STATE_ORIGINAL_PATH)
+                self.grid[r][c].set_state(TILE_STATE_ORIGINAL_PATH, force_immediate=True)
                 valid_path_exists = True
                 # Calculate and store the reflection
                 reflected_coords = self._get_reflected_coords(r, c)
@@ -260,16 +262,21 @@ class Game:
     def _update(self, current_time):
         """Updates the game state based on time and logic."""
 
+        # --- Update Tile Animations ---
+        # This should happen every frame, regardless of game state
+        for row in self.grid:
+            for tile in row:
+                tile.update_animation(current_time)
+        
         # --- State: SHOWING_PATH ---
         if self.game_state == STATE_SHOWING_PATH:
             if current_time - self.path_show_start_time >= PATH_SHOW_DURATION:
-                # Time to hide the path and switch to player drawing
                 for r in range(GRID_HEIGHT_TILES):
-                    for c in range(SYMMETRY_LINE_TILE_INDEX): # Only left side
+                    for c in range(SYMMETRY_LINE_TILE_INDEX):
                         if self.grid[r][c].state == TILE_STATE_ORIGINAL_PATH:
                             self.grid[r][c].set_state(TILE_STATE_EMPTY)
                 self.game_state = STATE_PLAYER_DRAWING
-                self.level_timer_start = current_time # Start the timer for this level
+                self.level_timer_start = current_time
 
         # --- State: PLAYER_DRAWING ---
         elif self.game_state == STATE_PLAYER_DRAWING:
