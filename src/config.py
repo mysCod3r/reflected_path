@@ -102,7 +102,8 @@ SOUND_GAME_OVER = 'game_over'
 SOUND_PATH_SHOW = 'path_show'
 
 # --- Animation Settings ---
-TILE_COLOR_TRANSITION_DURATION = 250 # ms (0.25 saniye)
+TILE_COLOR_TRANSITION_DURATION = 250 # ms
+PATH_REVEAL_DELAY_PER_TILE = 75 # ms
 
 # --- Font Loading ---
 # Attempt to load the default font, provide fallbacks

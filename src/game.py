@@ -94,6 +94,9 @@ class Game:
         self.path_show_start_time = 0
         self.level_timer_start = 0
         self.transition_timer_start = 0
+        self.current_path_coords_to_reveal = []
+        self.last_reveal_time = 0
+        self.reveal_index = 0
 
         # --- Initial Level Setup ---
         if not self._setup_level():
@@ -183,40 +186,36 @@ class Game:
         # Clear Grid Tile States - Force immediate color change
         for r in range(GRID_HEIGHT_TILES):
             for c in range(GRID_WIDTH_TILES):
-                # Use force_immediate=True to skip animation during setup
                 self.grid[r][c].set_state(TILE_STATE_EMPTY, force_immediate=True)
 
-
-        # --- Load Path and Calculate Reflection ---
+        # --- Load Path and Prepare for Reveal ---
         current_path_coords = LEVELS[self.current_level_index]
+        self.correct_reflection_coords.clear() # Clear reflection from previous level
+        self.current_path_coords_to_reveal = [] # Clear path reveal list
         valid_path_exists = False
         print(f"--- Setting up Level {self.current_level_index + 1} ---")
         for r, c in current_path_coords:
-            # Validate original path coordinates
             if 0 <= r < GRID_HEIGHT_TILES and 0 <= c < SYMMETRY_LINE_TILE_INDEX:
-                self.grid[r][c].set_state(TILE_STATE_ORIGINAL_PATH, force_immediate=True)
+                # DON'T set state here, just store coords for reveal
+                self.current_path_coords_to_reveal.append((r, c))
                 valid_path_exists = True
-                # Calculate and store the reflection
+                # Calculate and store reflection (this part remains the same)
                 reflected_coords = self._get_reflected_coords(r, c)
                 if reflected_coords:
                     self.correct_reflection_coords.add(reflected_coords)
-                # else: # Optional: Log if reflection is out of bounds
-                    # print(f"  - Reflection for ({r},{c}) is out of bounds.")
             else:
-                print(f"  Warning: Invalid original path coordinate in level data: ({r},{c})")
+                print(f"  Warning: Invalid original path coordinate: ({r},{c})")
 
         if not valid_path_exists:
-            print(f"  ERROR: Level {self.current_level_index + 1} has no valid path tiles on the left side.")
-            return False # Cannot proceed without a valid path
+            print(f"  ERROR: Level {self.current_level_index + 1} has no valid path tiles.")
+            return False
 
-        # print(f"  Correct Reflection Coords: {self.correct_reflection_coords}") # Debugging
-
-        # --- Set Initial Game State for Level ---
+        # --- Set Initial Game State for Level Reveal ---
         self.game_state = STATE_SHOWING_PATH
-        self.path_show_start_time = pygame.time.get_ticks() # Start path visibility timer
-        self._play_sound(SOUND_PATH_SHOW) # Play sound for path showing
+        self.reveal_index = 0 # Start revealing from the first tile
+        self.last_reveal_time = pygame.time.get_ticks() # Start timer for reveal delay
 
-        return True # Level setup successful
+        return True
 
     def run(self):
         """Starts and manages the main game loop."""
@@ -296,25 +295,43 @@ class Game:
          correctly_drawn_player_tiles = self.player_drawn_tiles.intersection(self.correct_reflection_coords)
          return correctly_drawn_player_tiles == self.correct_reflection_coords
 
-
     def _update(self, current_time):
-        """Updates the game state based on time and logic."""
-
-        # --- Update Tile Animations ---
-        # This should happen every frame, regardless of game state
+        # Update Tile Animations (Should be done first)
         for row in self.grid:
             for tile in row:
                 tile.update_animation(current_time)
-        
-        # --- State: SHOWING_PATH ---
+
+        # --- State-Specific Logic ---
         if self.game_state == STATE_SHOWING_PATH:
-            if current_time - self.path_show_start_time >= PATH_SHOW_DURATION:
-                for r in range(GRID_HEIGHT_TILES):
-                    for c in range(SYMMETRY_LINE_TILE_INDEX):
-                        if self.grid[r][c].state == TILE_STATE_ORIGINAL_PATH:
-                            self.grid[r][c].set_state(TILE_STATE_EMPTY)
-                self.game_state = STATE_PLAYER_DRAWING
-                self.level_timer_start = current_time
+            # Reveal tiles sequentially
+            if self.reveal_index < len(self.current_path_coords_to_reveal):
+                if current_time - self.last_reveal_time >= PATH_REVEAL_DELAY_PER_TILE:
+                    # Time to reveal the next tile
+                    r, c = self.current_path_coords_to_reveal[self.reveal_index]
+                    # Use force_immediate=True for instant reveal color, or False for reveal animation
+                    self.grid[r][c].set_state(TILE_STATE_ORIGINAL_PATH, force_immediate=True)
+                    self._play_sound(SOUND_PATH_SHOW) # Play sound for each reveal
+                    self.reveal_index += 1
+                    self.last_reveal_time = current_time # Reset timer for next delay
+            else:
+                # All tiles revealed, now wait for PATH_SHOW_DURATION before hiding
+                # Calculate total reveal time approx.
+                total_reveal_time = len(self.current_path_coords_to_reveal) * PATH_REVEAL_DELAY_PER_TILE
+                # Wait an additional duration after the last tile is revealed
+                # Let's use PATH_SHOW_DURATION as the *total* time the path is visible after reveal starts
+                reveal_start_time = self.last_reveal_time - total_reveal_time # Approx start
+                # Or simpler: Wait fixed duration after *last* reveal
+                wait_after_reveal = PATH_SHOW_DURATION # How long to wait after last tile shown
+                if current_time - self.last_reveal_time >= wait_after_reveal:
+                     # Time to hide the path (using existing fade out animation)
+                     for r, c in self.current_path_coords_to_reveal:
+                         # Check if tile still exists and is in the correct state before hiding
+                         if 0 <= r < GRID_HEIGHT_TILES and 0 <= c < GRID_WIDTH_TILES:
+                              if self.grid[r][c].state == TILE_STATE_ORIGINAL_PATH:
+                                  self.grid[r][c].set_state(TILE_STATE_EMPTY) # Trigger fade out
+
+                     self.game_state = STATE_PLAYER_DRAWING
+                     self.level_timer_start = current_time # Start player timer
 
         # --- State: PLAYER_DRAWING ---
         elif self.game_state == STATE_PLAYER_DRAWING:
