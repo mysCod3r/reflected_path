@@ -83,7 +83,6 @@ class Tile:
             self.animation_start_color = self.current_color
             self.animation_start_time = pygame.time.get_ticks()
             self.is_animating = True
-        # If self.current_color == new_target_color, do nothing (already there or animating there)
 
 
     def update_animation(self, current_ticks):
@@ -105,14 +104,9 @@ class Tile:
             self.current_color = self.target_color
             self.is_animating = False
         elif elapsed_time < 0:
-             # Edge case: if timer wrapped around or time went backwards somehow
              self.current_color = self.animation_start_color # Reset to start or end? End is safer.
-             # self.current_color = self.target_color
-             # self.is_animating = False # Optionally stop animation
              print(f"Warning: Negative elapsed time ({elapsed_time}) in tile animation.")
         else:
-            # Animation in progress - calculate interpolation factor (progress)
-            # Clamp progress value strictly between 0.0 and 1.0 to avoid ValueError in lerp
             progress = max(0.0, min(1.0, elapsed_time / duration))
 
             try:
@@ -139,21 +133,19 @@ class Tile:
             return
 
         base_color = self.current_color
-        border_offset = 2 # How many pixels for the border effect
+        border_offset = 2
         inner_rect = self.rect.inflate(-border_offset * 2, -border_offset * 2)
         
-        # Draw the tile background using the current animated color
         pygame.draw.rect(screen, base_color, self.rect)
 
         try:
-            # Make inner color slightly lighter (ensure RGB values stay within 0-255)
             lighter_color = pygame.Color(
                 min(255, base_color.r + 15),
                 min(255, base_color.g + 15),
                 min(255, base_color.b + 15)
             )
             pygame.draw.rect(screen, lighter_color, inner_rect)
-        except ValueError: # Handle potential errors if base_color has alpha etc.
+        except ValueError:
              pygame.draw.rect(screen, base_color, inner_rect) # Fallback to base color
 
         if draw_grid_overlay:
@@ -165,7 +157,6 @@ class Tile:
         try:
             return self.rect.collidepoint(mouse_pos)
         except TypeError:
-            # Handle cases where mouse_pos might not be a valid coordinate pair
             print(f"Warning: Invalid mouse_pos format ({mouse_pos}) for is_clicked.")
             return False
 
@@ -175,5 +166,5 @@ class Tile:
 
     def __repr__(self):
         """Returns a developer-friendly string representation of the Tile."""
-        state_repr = self.state # Or map integer state to string if needed
+        state_repr = self.state
         return f"Tile(row={self.row}, col={self.col}, state={state_repr}, animating={self.is_animating})"

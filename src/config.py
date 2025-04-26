@@ -4,7 +4,6 @@ Game Configuration and Constants for Reflected Path
 """
 import pygame
 
-# --- Pygame Initialization Helper ---
 # Initialize font module early and handle potential errors
 try:
     pygame.font.init()
@@ -13,7 +12,6 @@ except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize pygame.font: {e}")
     print("UI text rendering will not work.")
     _font_module_available = False
-    # Depending on how critical fonts are, you might want to sys.exit() here
 
 # --- Screen and Display ---
 SCREEN_WIDTH = 800
@@ -22,7 +20,6 @@ WINDOW_TITLE = "Yansıyan Yol"
 FPS = 60
 
 # --- Colors (RGB Tuples) ---
-# Using descriptive names improves readability
 COLOR_BACKGROUND = (20, 30, 40)        # Dark bluish-grey
 COLOR_GRID_LINES = (50, 60, 70)        # Lighter grey for grid lines
 COLOR_SYMMETRY_LINE = (255, 255, 255)  # White for the central line
@@ -60,7 +57,6 @@ SYMMETRY_LINE_WIDTH = 3 # Make it slightly thicker
 # Using integers can be slightly more performant for lookups/comparisons
 TILE_STATE_EMPTY = 0
 TILE_STATE_ORIGINAL_PATH = 1
-# TILE_STATE_PLAYER_DRAWN = 2 # Removed - directly use Correct/Incorrect
 TILE_STATE_CORRECT = 3
 TILE_STATE_INCORRECT = 4
 
@@ -73,7 +69,6 @@ TILE_COLORS = {
 }
 
 # --- Game States ---
-# Using descriptive strings for better debugging and readability
 STATE_SHOWING_PATH = "SHOWING_PATH" # When the path is shown to the player
 STATE_PLAYER_DRAWING = "PLAYER_DRAWING" # When the player is drawing
 STATE_LEVEL_TRANSITION = "LEVEL_TRANSITION" # Between levels
@@ -115,25 +110,21 @@ PATH_REVEAL_DELAY_PER_TILE = 75 # ms
 UI_FONT = None
 if _font_module_available:
     try:
-        # Try loading a specific nice font if available (e.g., put 'font.ttf' in assets)
-        # UI_FONT = pygame.font.Font("assets/fonts/your_font_name.ttf", UI_FONT_SIZE)
-        # If not using a custom font, load the default system font
         UI_FONT = pygame.font.Font(None, UI_FONT_SIZE)
     except pygame.error as e: # Catch Pygame specific errors
         print(f"Warning: Pygame error loading default font: {e}. Using fallback SysFont.")
         try:
-            UI_FONT = pygame.font.SysFont('consolas', UI_FONT_SIZE, bold=True) # Try Consolas first
+            UI_FONT = pygame.font.SysFont('consolas', UI_FONT_SIZE, bold=True)
         except pygame.error:
              print(f"Warning: Consolas not found. Using Arial.")
              try:
                  UI_FONT = pygame.font.SysFont('arial', UI_FONT_SIZE) # Basic fallback
              except pygame.error as e_sys:
                   print(f"CRITICAL ERROR: Could not load any system font: {e_sys}")
-                  # The game might be unplayable without text rendering
     except FileNotFoundError:
         print(f"Warning: Custom font file not found (if specified). Using default/fallback.")
         UI_FONT = pygame.font.Font(None, UI_FONT_SIZE) # Fallback to default None
-    except Exception as e: # Catch any other unexpected error during font loading
+    except Exception as e:
          print(f"CRITICAL ERROR: Unexpected error loading font: {e}")
 
 if UI_FONT is None and _font_module_available:
@@ -143,5 +134,4 @@ if UI_FONT is None and _font_module_available:
     except Exception as e:
         print(f"CRITICAL ERROR: Final font fallback failed: {e}")
 
-# A flag to easily check if font rendering is possible later
 FONT_AVAILABLE = UI_FONT is not None

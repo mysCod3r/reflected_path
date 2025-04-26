@@ -29,11 +29,11 @@ class Game:
 
         # --- 3. Initialize Other Subsystems (Mixer, Font) ---
         self._initialize_mixer()
-        self._initialize_font() # Use helper for font init
+        self._initialize_font() 
 
-        # --- 4. Load Assets (Sounds, Images - AFTER display is set) ---
-        self._load_sounds() # Load sounds now that mixer is ready
-        self.background_image = self._load_background() # Load background now that display is ready
+        # --- 4. Load Assets (Sounds, Images) ---
+        self._load_sounds() 
+        self.background_image = self._load_background()
 
         # --- 5. Initialize Game Components & State ---
         self.clock = pygame.time.Clock()
@@ -63,15 +63,13 @@ class Game:
         # --- 6. Initial Level Setup ---
         if not self._setup_level():
             print("ERROR: Failed to setup initial level. Exiting.")
-            self.running = False # Stop the game loop if setup fails
+            self.running = False 
 
     # --- Initialization Helpers ---
-
     def _initialize_mixer(self):
         """Initializes the Pygame mixer."""
         try:
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
-            # print("Pygame mixer initialized.")
             self.sound_enabled = True
         except pygame.error as e:
             print(f"Warning: Mixer init failed: {e}. Sounds disabled.")
@@ -80,12 +78,9 @@ class Game:
 
     def _initialize_font(self):
         """Initializes the font object using config settings."""
-        # Font module should be initialized by pygame.init()
-        # We just need to load the font object here
-        self.font = UI_FONT # Get font object loaded in config.py
+        self.font = UI_FONT
         if not FONT_AVAILABLE:
             print("CRITICAL: Font not available. UI text cannot be rendered.")
-            # Game might still run, but without text
 
     def _load_sounds(self):
         """Loads sound effects into self.sounds dictionary."""
@@ -103,7 +98,6 @@ class Game:
         }
         loaded_count = 0
         for name_key, path in sound_files.items():
-            # (Loading logic remains the same)
             try:
                 if os.path.exists(path):
                     self.sounds[name_key] = pygame.mixer.Sound(path)
@@ -113,7 +107,6 @@ class Game:
             except pygame.error as e:
                 print(f"  Error loading sound '{name_key}': {e}")
                 self.sounds[name_key] = None
-        # print(f"Sounds loaded: {loaded_count}/{len(sound_files)}")
 
     def _load_background(self):
         """Loads and converts the background image surface."""
@@ -131,7 +124,7 @@ class Game:
         except pygame.error as e:
             print(f"Error loading background {background_path}: {e}")
             return None
-        except Exception as e_gen: # Catch other potential errors
+        except Exception as e_gen:
              print(f"Unexpected error loading background: {e_gen}")
              return None
 
@@ -248,7 +241,7 @@ class Game:
          return len(self.correct_reflection_coords) > 0 and correctly_drawn_player_tiles == self.correct_reflection_coords
 
     def _update(self, current_time):
-        for row in self.grid: # Update animations first
+        for row in self.grid:
             for tile in row: tile.update_animation(current_time)
 
         if self.game_state == STATE_SHOWING_PATH:
@@ -296,7 +289,7 @@ class Game:
                     print("Game Over: Time Up!")
             # Check ink AFTER mistake check in handle_click
             elif self.remaining_ink <= 0 and not self._check_level_complete():
-                if self.game_state not in [STATE_GAME_OVER_INK, STATE_GAME_OVER_MISTAKES]: # Don't override mistake game over
+                if self.game_state not in [STATE_GAME_OVER_INK, STATE_GAME_OVER_MISTAKES]:
                     self.game_state = STATE_GAME_OVER_INK
                     self.transition_timer_start = current_time
                     self._play_sound(SOUND_GAME_OVER)
